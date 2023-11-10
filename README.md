@@ -42,6 +42,10 @@ document.addEventListener("keyup", (e) => {
 });
 ```
 
+## Known Issues
+
+Because this library depends on PeerJS we are unfortunately not able to support SSR at this time
+
 ## Todo
 
 - Add configurable PeerJS server
