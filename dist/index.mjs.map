@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/index.ts"],"sourcesContent":["export class TRINNDemo {\r\n  constructor() {\r\n    console.log(\"it work\");\r\n  }\r\n}\r\n"],"mappings":";AAAO,IAAM,YAAN,MAAgB;AAAA,EACrB,cAAc;AACZ,YAAQ,IAAI,SAAS;AAAA,EACvB;AACF;","names":[]}
