@@ -40,19 +40,29 @@ export class TRINNController extends TRINNPeer {
   sendRelease(keyName: string) {
     this.connection?.send({ key: keyName, type: "release" });
   }
+
+  sendData(data: any) {
+    this.connection?.send({ key: "data", type: "data", object: data });
+  }
 }
 
 export class TRINNRemote extends TRINNPeer {
   private pressCallback: ((key: string) => void) | undefined;
   private releaseCallback: ((key: string) => void) | undefined;
+  private dataCallback: ((object: Object) => void) | undefined;
 
   constructor(sharedId: string) {
     super(`${sharedId}-remote`);
     this.peer.on("connection", (connection) => {
       connection.on("data", (data) => {
-        const { key, type } = data as { key: string; type: string };
+        const { key, type, object } = data as {
+          key: string;
+          type: string;
+          object: any;
+        };
         if (type === "press") this.pressCallback?.(key);
         if (type === "release") this.releaseCallback?.(key);
+        if (type === "data") this.dataCallback?.(object);
       });
     });
   }
@@ -63,5 +73,9 @@ export class TRINNRemote extends TRINNPeer {
 
   onRelease(onReleaseCallback: (key: string) => void) {
     this.releaseCallback = onReleaseCallback;
+  }
+
+  onData(onDataCallback: (object: any) => void) {
+    this.dataCallback = onDataCallback;
   }
 }
