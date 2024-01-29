@@ -26,6 +26,10 @@ remote.onPress((key) => {
 remote.onRelease((key) => {
   console.log(`${key} was released`);
 });
+
+remote.onData((object) => {
+  console.log(object);
+});
 ```
 
 ```javascript
@@ -40,6 +44,8 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("keyup", (e) => {
   controller.sendRelease(e.key);
 });
+
+controller.sendData({ type: "bicycle", amount: 5 });
 ```
 
 ## Known Issues
