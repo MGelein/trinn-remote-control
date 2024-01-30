@@ -6,9 +6,9 @@ export type TRINNError = {
   type: string;
 };
 
+const illegalIdChars = new RegExp("[^a-zA-Z0-9-_]");
+
 class TRINNPeer {
-  protected pressCallback: ((key: string) => void) | undefined;
-  protected releaseCallback: ((key: string) => void) | undefined;
   protected dataCallback: ((object: Object) => void) | undefined;
   protected connection: DataConnection | undefined;
 
@@ -17,6 +17,13 @@ class TRINNPeer {
   error: TRINNError | undefined;
 
   constructor(requiredId: string) {
+    const illegalChars = illegalIdChars.exec(requiredId);
+    if (illegalChars !== null) {
+      throw new Error(
+        "You're id contains some illegal characters: " + illegalChars.join(",")
+      );
+    }
+
     this.peer = new Peer(requiredId);
     this.peer.on("open", (id) => {
       this.id = id;
@@ -54,6 +61,9 @@ export class TRINNController extends TRINNPeer {
 }
 
 export class TRINNRemote extends TRINNPeer {
+  private pressCallback: ((key: string) => void) | undefined;
+  private releaseCallback: ((key: string) => void) | undefined;
+
   constructor(sharedId: string) {
     super(`${sharedId}-remote`);
     this.peer.on("connection", (connection) => {
@@ -63,9 +73,9 @@ export class TRINNRemote extends TRINNPeer {
           type: string;
           object: any;
         };
-        if (type === "press") this.pressCallback?.(key);
-        if (type === "release") this.releaseCallback?.(key);
         if (type === "data") this.dataCallback?.(object);
+        else if (type === "press") this.pressCallback?.(key);
+        else if (type === "release") this.releaseCallback?.(key);
       });
     });
   }
