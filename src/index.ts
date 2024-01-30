@@ -7,6 +7,11 @@ export type TRINNError = {
 };
 
 class TRINNPeer {
+  protected pressCallback: ((key: string) => void) | undefined;
+  protected releaseCallback: ((key: string) => void) | undefined;
+  protected dataCallback: ((object: Object) => void) | undefined;
+  protected connection: DataConnection | undefined;
+
   peer: Peer;
   id: string | undefined;
   error: TRINNError | undefined;
@@ -20,11 +25,17 @@ class TRINNPeer {
       this.error = { message, type, name };
     });
   }
+
+  sendData(data: any) {
+    this.connection?.send({ key: "data", type: "data", object: data });
+  }
+
+  onData(onDataCallback: (object: any) => void) {
+    this.dataCallback = onDataCallback;
+  }
 }
 
 export class TRINNController extends TRINNPeer {
-  connection: DataConnection | undefined;
-
   constructor(sharedId: string) {
     super(`${sharedId}-controller`);
     this.peer.on("open", (id) => {
@@ -40,17 +51,9 @@ export class TRINNController extends TRINNPeer {
   sendRelease(keyName: string) {
     this.connection?.send({ key: keyName, type: "release" });
   }
-
-  sendData(data: any) {
-    this.connection?.send({ key: "data", type: "data", object: data });
-  }
 }
 
 export class TRINNRemote extends TRINNPeer {
-  private pressCallback: ((key: string) => void) | undefined;
-  private releaseCallback: ((key: string) => void) | undefined;
-  private dataCallback: ((object: Object) => void) | undefined;
-
   constructor(sharedId: string) {
     super(`${sharedId}-remote`);
     this.peer.on("connection", (connection) => {
@@ -73,9 +76,5 @@ export class TRINNRemote extends TRINNPeer {
 
   onRelease(onReleaseCallback: (key: string) => void) {
     this.releaseCallback = onReleaseCallback;
-  }
-
-  onData(onDataCallback: (object: any) => void) {
-    this.dataCallback = onDataCallback;
   }
 }
