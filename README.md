@@ -30,6 +30,8 @@ remote.onRelease((key) => {
 remote.onData((object) => {
   console.log(object);
 });
+
+remote.sendData({ type: "bicycle", amount: 5 });
 ```
 
 ```javascript
@@ -46,6 +48,10 @@ document.addEventListener("keyup", (e) => {
 });
 
 controller.sendData({ type: "bicycle", amount: 5 });
+
+controller.onData((object) => {
+  console.log(object);
+});
 ```
 
 ## Known Issues
