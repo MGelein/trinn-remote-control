@@ -67,6 +67,7 @@ export class TRINNRemote extends TRINNPeer {
   constructor(sharedId: string) {
     super(`${sharedId}-remote`);
     this.peer.on("connection", (connection) => {
+      this.connection = connection;
       connection.on("data", (data) => {
         const { key, type, object } = data as {
           key: string;
