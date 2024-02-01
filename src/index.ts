@@ -8,6 +8,10 @@ export type TRINNError = {
 
 const illegalIdChars = new RegExp("[^a-zA-Z0-9-_]");
 
+export const config = {
+  host: "0.peerjs.com",
+};
+
 class TRINNPeer {
   protected dataCallback: ((object: Object) => void) | undefined;
   protected connection: DataConnection | undefined;
@@ -24,7 +28,7 @@ class TRINNPeer {
       );
     }
 
-    this.peer = new Peer(requiredId);
+    this.peer = new Peer(requiredId, { host: config.host });
     this.peer.on("open", (id) => {
       this.id = id;
     });
