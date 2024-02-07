@@ -11,6 +11,7 @@ const illegalIdChars = new RegExp("[^a-zA-Z0-9-_]");
 export const TRINNConfig = {
   host: "0.peerjs.com",
   secure: false,
+  debug: false,
 };
 
 class TRINNPeer {
@@ -29,25 +30,36 @@ class TRINNPeer {
       );
     }
 
+    if (TRINNConfig.debug) {
+      console.log(
+        `Creating peer: ID: ${requiredId}, HOST: ${TRINNConfig.host}, SECURE: ${TRINNConfig.secure}`
+      );
+    }
     this.peer = new Peer(requiredId, {
       host: TRINNConfig.host,
       secure: TRINNConfig.secure,
     });
     this.peer.on("open", (id) => {
+      if (TRINNConfig.debug) {
+        console.log("Created peer with ID: ", id);
+      }
       this.id = id;
     });
     this.peer.on("error", ({ message, type, name }) => {
       this.error = { message, type, name };
+      if (TRINNConfig.debug) {
+        console.log("Error: ", this.error);
+      }
     });
   }
 
   sendData(data: any) {
-    if (!this.connection)
-      return console.error(
-        "Can't send data without having a connection",
-        this.connection
-      );
-    this.connection.send({ key: "data", type: "data", object: data });
+    const payload = { key: "data", type: "data", object: data };
+    if (TRINNConfig.debug) {
+      console.log("Sending data:");
+      console.log({ connection: this.connection, payload });
+    }
+    this.connection?.send(payload);
   }
 
   onData(onDataCallback: (object: any) => void) {
@@ -61,6 +73,13 @@ export class TRINNController extends TRINNPeer {
     this.peer.on("open", (id) => {
       this.id = id;
       this.connection = this.peer.connect(`${sharedId}-remote`);
+      this.connection.on("data", (data) => {
+        const { type, object } = data as {
+          type: string;
+          object: any;
+        };
+        if (type === "data") this.dataCallback?.(object);
+      });
     });
   }
 
