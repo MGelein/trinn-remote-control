@@ -42,7 +42,12 @@ class TRINNPeer {
   }
 
   sendData(data: any) {
-    this.connection?.send({ key: "data", type: "data", object: data });
+    if (!this.connection)
+      return console.error(
+        "Can't send data without having a connection",
+        this.connection
+      );
+    this.connection.send({ key: "data", type: "data", object: data });
   }
 
   onData(onDataCallback: (object: any) => void) {
