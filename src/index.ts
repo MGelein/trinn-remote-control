@@ -10,7 +10,7 @@ const illegalIdChars = new RegExp("[^a-zA-Z0-9-_]");
 
 export const TRINNConfig = {
   host: "0.peerjs.com",
-  secure: true,
+  secure: false,
 };
 
 class TRINNPeer {
