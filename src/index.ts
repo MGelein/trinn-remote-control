@@ -17,7 +17,7 @@ export const TRINNConfig = {
 class TRINNPeer {
   protected dataCallback: ((object: Object) => void) | undefined;
   protected connectionCallback: (() => void) | undefined;
-  protected connection: DataConnection | undefined;
+  protected connections: DataConnection[] = [];
 
   peer: Peer;
   id: string | undefined;
@@ -58,9 +58,9 @@ class TRINNPeer {
     const payload = { key: "data", type: "data", object: data };
     if (TRINNConfig.debug) {
       console.log("Sending data:");
-      console.log({ connection: this.connection, payload });
+      console.log({ connections: this.connections, payload });
     }
-    this.connection?.send(payload);
+    this.connections.forEach((conn) => conn.send(payload));
   }
 
   onData(onDataCallback: (object: any) => void) {
@@ -77,24 +77,32 @@ export class TRINNController extends TRINNPeer {
     super(`${sharedId}-controller`);
     this.peer.on("open", (id) => {
       this.id = id;
-      this.connection = this.peer.connect(`${sharedId}-remote`);
-      this.connection.on("open", () => this.connectionCallback?.());
-      this.connection.on("data", (data) => {
+      const connection = this.peer.connect(`${sharedId}-remote`);
+      this.connections.push(connection);
+      connection.on("open", () => this.connectionCallback?.());
+      connection.on("data", (data) => {
         const { type, object } = data as {
           type: string;
           object: any;
         };
         if (type === "data") this.dataCallback?.(object);
       });
+      connection.on("close", () => {
+        this.connections = this.connections.filter(
+          (conn) => conn !== connection
+        );
+      });
     });
   }
 
   sendPress(keyName: string) {
-    this.connection?.send({ key: keyName, type: "press" });
+    this.connections.map((conn) => conn.send({ key: keyName, type: "press" }));
   }
 
   sendRelease(keyName: string) {
-    this.connection?.send({ key: keyName, type: "release" });
+    this.connections.map((conn) =>
+      conn.send({ key: keyName, type: "release" })
+    );
   }
 }
 
@@ -105,7 +113,7 @@ export class TRINNRemote extends TRINNPeer {
   constructor(sharedId: string) {
     super(`${sharedId}-remote`);
     this.peer.on("connection", (connection) => {
-      this.connection = connection;
+      this.connections.push(connection);
       this.connectionCallback?.();
       connection.on("data", (data) => {
         const { key, type, object } = data as {
@@ -116,6 +124,11 @@ export class TRINNRemote extends TRINNPeer {
         if (type === "data") this.dataCallback?.(object);
         else if (type === "press") this.pressCallback?.(key);
         else if (type === "release") this.releaseCallback?.(key);
+      });
+      connection.on("close", () => {
+        this.connections = this.connections.filter(
+          (conn) => conn !== connection
+        );
       });
     });
   }
