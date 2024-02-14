@@ -16,6 +16,7 @@ export const TRINNConfig = {
 
 class TRINNPeer {
   protected dataCallback: ((object: Object) => void) | undefined;
+  protected connectionCallback: (() => void) | undefined;
   protected connection: DataConnection | undefined;
 
   peer: Peer;
@@ -65,6 +66,10 @@ class TRINNPeer {
   onData(onDataCallback: (object: any) => void) {
     this.dataCallback = onDataCallback;
   }
+
+  onConnection(onConnectionCallback: () => void) {
+    this.connectionCallback = onConnectionCallback;
+  }
 }
 
 export class TRINNController extends TRINNPeer {
@@ -73,6 +78,7 @@ export class TRINNController extends TRINNPeer {
     this.peer.on("open", (id) => {
       this.id = id;
       this.connection = this.peer.connect(`${sharedId}-remote`);
+      this.connection.on("open", () => this.connectionCallback?.());
       this.connection.on("data", (data) => {
         const { type, object } = data as {
           type: string;
@@ -100,6 +106,7 @@ export class TRINNRemote extends TRINNPeer {
     super(`${sharedId}-remote`);
     this.peer.on("connection", (connection) => {
       this.connection = connection;
+      this.connectionCallback?.();
       connection.on("data", (data) => {
         const { key, type, object } = data as {
           key: string;
