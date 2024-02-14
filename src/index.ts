@@ -15,6 +15,7 @@ export const TRINNConfig = {
 };
 
 class TRINNPeer {
+  protected createCallback: ((id: string) => void) | undefined;
   protected dataCallback: ((object: Object) => void) | undefined;
   protected connectionCallback: (() => void) | undefined;
   protected connections: DataConnection[] = [];
@@ -45,6 +46,7 @@ class TRINNPeer {
         console.log("Created peer with ID: ", id);
       }
       this.id = id;
+      this.createCallback?.(id);
     });
     this.peer.on("error", ({ message, type, name }) => {
       this.error = { message, type, name };
@@ -61,6 +63,10 @@ class TRINNPeer {
       console.log({ connections: this.connections, payload });
     }
     this.connections.forEach((conn) => conn.send(payload));
+  }
+
+  onCreate(onCreateCallback: (id: string) => void) {
+    this.createCallback = onCreateCallback;
   }
 
   onData(onDataCallback: (object: any) => void) {
