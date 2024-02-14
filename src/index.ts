@@ -74,7 +74,7 @@ class TRINNPeer {
 
 export class TRINNController extends TRINNPeer {
   constructor(sharedId: string) {
-    super(`${sharedId}-controller`);
+    super(`${sharedId}-${crypto.randomUUID()}`);
     this.peer.on("open", (id) => {
       this.id = id;
       const connection = this.peer.connect(`${sharedId}-remote`);
