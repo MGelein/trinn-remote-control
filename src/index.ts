@@ -16,6 +16,7 @@ export const TRINNConfig = {
 };
 
 class TRINNPeer {
+  protected openCallback: ((id: string) => void) | undefined;
   protected errorCallback: ((error: { type: string }) => void) | undefined;
   protected createCallback: ((id: string) => void) | undefined;
   protected dataCallback: ((object: Object) => void) | undefined;
@@ -49,6 +50,7 @@ class TRINNPeer {
       }
       this.id = id;
       this.createCallback?.(id);
+      this.openCallback?.(id);
     });
     this.peer.on("error", ({ message, type, name }) => {
       this.error = { message, type, name };
@@ -83,9 +85,15 @@ class TRINNPeer {
   protected onError(onErrorCallback: (error: { type: string }) => void) {
     this.errorCallback = onErrorCallback;
   }
+
+  protected onOpen(onOpenCallback: (id: string) => void) {
+    this.openCallback = onOpenCallback;
+  }
 }
 
 export class TRINNController extends TRINNPeer {
+  status: "waiting" | "connecting" | "connected" = "waiting";
+
   constructor(sharedId: string) {
     super(`${sharedId}-${crypto.randomUUID()}`);
     this.peer.on("open", (id) => {
@@ -103,9 +111,13 @@ export class TRINNController extends TRINNPeer {
   }
 
   private connectToRemote(sharedId: string) {
+    this.status = "connecting";
     const connection = this.peer.connect(`${sharedId}-remote`);
     this.connections.push(connection);
-    connection.on("open", () => this.connectionCallback?.());
+    connection.on("open", () => {
+      this.connectionCallback?.();
+      this.status = "connected";
+    });
     connection.on("data", (data) => {
       const { type, object } = data as {
         type: string;
@@ -133,8 +145,12 @@ export class TRINNRemote extends TRINNPeer {
   private pressCallback: ((key: string) => void) | undefined;
   private releaseCallback: ((key: string) => void) | undefined;
 
+  status: "waiting" | "ready" = "waiting";
+
   constructor(sharedId: string) {
     super(`${sharedId}-remote`);
+    this.onOpen(() => (this.status = "ready"));
+
     this.peer.on("connection", (connection) => {
       this.connections.push(connection);
       this.connectionCallback?.();
