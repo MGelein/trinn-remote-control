@@ -8,7 +8,7 @@ export type TRINNError = {
 
 const illegalIdChars = new RegExp("[^a-zA-Z0-9-_]");
 
-export type TRINNStatus = "ready" | "waiting" | "connected" | "connecting" = "waiting";
+export type TRINNStatus = "ready" | "waiting" | "connected" | "connecting";
 
 export const TRINNConfig = {
   host: "0.peerjs.com",
@@ -99,8 +99,8 @@ class TRINNPeer {
     this.openCallback = onOpenCallback;
   }
 
-  protected setStatus(status: TRINNStatus){
-    if(this.status !== status) {
+  protected setStatus(status: TRINNStatus) {
+    if (this.status !== status) {
       this.status = status;
       this.statusChangeCallback?.(this.status);
     }
