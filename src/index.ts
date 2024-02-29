@@ -8,6 +8,8 @@ export type TRINNError = {
 
 const illegalIdChars = new RegExp("[^a-zA-Z0-9-_]");
 
+export type TRINNStatus = "ready" | "waiting" | "connected" | "connecting" = "waiting";
+
 export const TRINNConfig = {
   host: "0.peerjs.com",
   secure: false,
@@ -16,6 +18,7 @@ export const TRINNConfig = {
 };
 
 class TRINNPeer {
+  protected statusChangeCallback: ((status: TRINNStatus) => void) | undefined;
   protected openCallback: ((id: string) => void) | undefined;
   protected errorCallback: ((error: { type: string }) => void) | undefined;
   protected createCallback: ((id: string) => void) | undefined;
@@ -23,6 +26,7 @@ class TRINNPeer {
   protected connectionCallback: (() => void) | undefined;
   protected connections: DataConnection[] = [];
 
+  private status: TRINNStatus = "waiting";
   peer: Peer;
   id: string | undefined;
   error: TRINNError | undefined;
@@ -51,6 +55,7 @@ class TRINNPeer {
       this.id = id;
       this.createCallback?.(id);
       this.openCallback?.(id);
+      this.setStatus("ready");
     });
     this.peer.on("error", ({ message, type, name }) => {
       this.error = { message, type, name };
@@ -82,6 +87,10 @@ class TRINNPeer {
     this.connectionCallback = onConnectionCallback;
   }
 
+  onStatusChange(onStatusChangeCallback: (status: TRINNStatus) => void) {
+    this.statusChangeCallback = onStatusChangeCallback;
+  }
+
   protected onError(onErrorCallback: (error: { type: string }) => void) {
     this.errorCallback = onErrorCallback;
   }
@@ -89,11 +98,16 @@ class TRINNPeer {
   protected onOpen(onOpenCallback: (id: string) => void) {
     this.openCallback = onOpenCallback;
   }
+
+  protected setStatus(status: TRINNStatus){
+    if(this.status !== status) {
+      this.status = status;
+      this.statusChangeCallback?.(this.status);
+    }
+  }
 }
 
 export class TRINNController extends TRINNPeer {
-  status: "waiting" | "connecting" | "connected" = "waiting";
-
   constructor(sharedId: string) {
     super(`${sharedId}-${crypto.randomUUID()}`);
     this.peer.on("open", (id) => {
@@ -111,12 +125,12 @@ export class TRINNController extends TRINNPeer {
   }
 
   private connectToRemote(sharedId: string) {
-    this.status = "connecting";
+    this.setStatus("connecting");
     const connection = this.peer.connect(`${sharedId}-remote`);
     this.connections.push(connection);
     connection.on("open", () => {
       this.connectionCallback?.();
-      this.status = "connected";
+      this.setStatus("connected");
     });
     connection.on("data", (data) => {
       const { type, object } = data as {
@@ -145,11 +159,8 @@ export class TRINNRemote extends TRINNPeer {
   private pressCallback: ((key: string) => void) | undefined;
   private releaseCallback: ((key: string) => void) | undefined;
 
-  status: "waiting" | "ready" = "waiting";
-
   constructor(sharedId: string) {
     super(`${sharedId}-remote`);
-    this.onOpen(() => (this.status = "ready"));
 
     this.peer.on("connection", (connection) => {
       this.connections.push(connection);
