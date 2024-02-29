@@ -12,9 +12,11 @@ export const TRINNConfig = {
   host: "0.peerjs.com",
   secure: false,
   debug: false,
+  retryTimeout: 10,
 };
 
 class TRINNPeer {
+  protected errorCallback: ((error: { type: string }) => void) | undefined;
   protected createCallback: ((id: string) => void) | undefined;
   protected dataCallback: ((object: Object) => void) | undefined;
   protected connectionCallback: (() => void) | undefined;
@@ -53,6 +55,7 @@ class TRINNPeer {
       if (TRINNConfig.debug) {
         console.log("Error: ", this.error);
       }
+      this.errorCallback?.({ type });
     });
   }
 
@@ -76,6 +79,10 @@ class TRINNPeer {
   onConnection(onConnectionCallback: () => void) {
     this.connectionCallback = onConnectionCallback;
   }
+
+  protected onError(onErrorCallback: (error: { type: string }) => void) {
+    this.errorCallback = onErrorCallback;
+  }
 }
 
 export class TRINNController extends TRINNPeer {
@@ -83,21 +90,31 @@ export class TRINNController extends TRINNPeer {
     super(`${sharedId}-${crypto.randomUUID()}`);
     this.peer.on("open", (id) => {
       this.id = id;
-      const connection = this.peer.connect(`${sharedId}-remote`);
-      this.connections.push(connection);
-      connection.on("open", () => this.connectionCallback?.());
-      connection.on("data", (data) => {
-        const { type, object } = data as {
-          type: string;
-          object: any;
-        };
-        if (type === "data") this.dataCallback?.(object);
+      this.onError(({ type }) => {
+        if (type === "peer-unavailable") {
+          setTimeout(() => {
+            this.connectToRemote(sharedId);
+          }, 1000 * TRINNConfig.retryTimeout);
+        }
       });
-      connection.on("close", () => {
-        this.connections = this.connections.filter(
-          (conn) => conn !== connection
-        );
-      });
+
+      this.connectToRemote(sharedId);
+    });
+  }
+
+  private connectToRemote(sharedId: string) {
+    const connection = this.peer.connect(`${sharedId}-remote`);
+    this.connections.push(connection);
+    connection.on("open", () => this.connectionCallback?.());
+    connection.on("data", (data) => {
+      const { type, object } = data as {
+        type: string;
+        object: any;
+      };
+      if (type === "data") this.dataCallback?.(object);
+    });
+    connection.on("close", () => {
+      this.connections = this.connections.filter((conn) => conn !== connection);
     });
   }
 
