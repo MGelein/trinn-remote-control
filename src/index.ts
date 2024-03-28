@@ -18,6 +18,7 @@ export const TRINNConfig = {
 };
 
 class TRINNPeer {
+  protected connectionCloseCallback: ((id: string) => void) | undefined;
   protected statusChangeCallback: ((status: TRINNStatus) => void) | undefined;
   protected openCallback: ((id: string) => void) | undefined;
   protected errorCallback: ((error: { type: string }) => void) | undefined;
@@ -87,6 +88,10 @@ class TRINNPeer {
     this.connectionCallback = onConnectionCallback;
   }
 
+  onConnectionClose(onConnectionCloseCallback: (id: string) => void) {
+    this.connectionCloseCallback = onConnectionCloseCallback;
+  }
+
   onStatusChange(onStatusChangeCallback: (status: TRINNStatus) => void) {
     this.statusChangeCallback = onStatusChangeCallback;
   }
@@ -140,6 +145,7 @@ export class TRINNController extends TRINNPeer {
       if (type === "data") this.dataCallback?.(object);
     });
     connection.on("close", () => {
+      this.connectionCloseCallback?.(connection.peer);
       this.connections = this.connections.filter((conn) => conn !== connection);
     });
   }
@@ -176,6 +182,7 @@ export class TRINNRemote extends TRINNPeer {
         else if (type === "release") this.releaseCallback?.(key);
       });
       connection.on("close", () => {
+        this.connectionCloseCallback?.(connection.peer);
         this.connections = this.connections.filter(
           (conn) => conn !== connection
         );
