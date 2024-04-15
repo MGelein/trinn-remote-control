@@ -15,6 +15,16 @@ export const TRINNConfig = {
   secure: false,
   debug: false,
   retryTimeout: 10,
+  iceServers: [],
+};
+
+export const setupTRINN = async () => {
+  const response = await fetch(
+    "https://trinn.metered.live/api/v1/turn/credentials?apiKey=f18b20324bf3ecce8c47091e971fc7c1b134"
+  );
+  const json = await response.json();
+  TRINNConfig.iceServers = json;
+  console.log({ config: TRINNConfig });
 };
 
 class TRINNPeer {
