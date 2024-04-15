@@ -43,7 +43,7 @@ class TRINNPeer {
   error: TRINNError | undefined;
 
   constructor(requiredId: string) {
-    if (!TRINNConfig.iceServers) {
+    if (TRINNConfig.iceServers.length <= 0) {
       throw new Error(
         "No ICE Servers have been specified. Call setupTRINN(), before any other code, and wait for it to finish"
       );
