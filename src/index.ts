@@ -24,6 +24,7 @@ export const setupTRINN = async () => {
   );
   const json = await response.json();
   TRINNConfig.iceServers = json;
+  if (TRINNConfig.debug) console.log({ iceServers: json });
 };
 
 class TRINNPeer {
