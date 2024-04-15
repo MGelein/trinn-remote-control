@@ -24,7 +24,6 @@ export const setupTRINN = async () => {
   );
   const json = await response.json();
   TRINNConfig.iceServers = json;
-  console.log({ config: TRINNConfig });
 };
 
 class TRINNPeer {
@@ -43,6 +42,11 @@ class TRINNPeer {
   error: TRINNError | undefined;
 
   constructor(requiredId: string) {
+    if (!TRINNConfig.iceServers) {
+      throw new Error(
+        "No ICE Servers have been specified. Call setupTRINN(), before any other code, and wait for it to finish"
+      );
+    }
     const illegalChars = illegalIdChars.exec(requiredId);
     if (illegalChars !== null) {
       throw new Error(
@@ -58,6 +62,9 @@ class TRINNPeer {
     this.peer = new Peer(requiredId, {
       host: TRINNConfig.host,
       secure: TRINNConfig.secure,
+      config: {
+        iceServers: TRINNConfig.iceServers,
+      },
     });
     this.peer.on("open", (id) => {
       if (TRINNConfig.debug) {
