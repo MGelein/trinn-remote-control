@@ -133,18 +133,13 @@ class TRINNPeer {
 export class TRINNController extends TRINNPeer {
   private unavailableCallback: (() => void) | undefined;
 
-  constructor(sharedId: string) {
+  constructor(sharedId: string, unavaibleHandler?: () => void) {
     super(`${sharedId}-${crypto.randomUUID()}`);
     this.peer.on("open", (id) => {
       this.id = id;
       this.onError(({ type }) => {
         if (type === "peer-unavailable") {
-          this.unavailableCallback?.();
-          if (TRINNConfig.debug)
-            console.log(
-              "Calling unavailable callback: ",
-              this.unavailableCallback
-            );
+          unavaibleHandler?.();
           setTimeout(() => {
             this.connectToRemote(sharedId);
           }, 1000 * TRINNConfig.retryTimeout);
@@ -184,10 +179,6 @@ export class TRINNController extends TRINNPeer {
     this.connections.map((conn) =>
       conn.send({ key: keyName, type: "release" })
     );
-  }
-
-  onUnavailable(onUnavailableCallback: () => void) {
-    this.unavailableCallback = onUnavailableCallback;
   }
 }
 
