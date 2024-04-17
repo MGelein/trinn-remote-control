@@ -131,8 +131,6 @@ class TRINNPeer {
 }
 
 export class TRINNController extends TRINNPeer {
-  private unavailableCallback: (() => void) | undefined;
-
   constructor(sharedId: string, unavaibleHandler?: () => void) {
     super(`${sharedId}-${crypto.randomUUID()}`);
     this.peer.on("open", (id) => {
@@ -152,12 +150,15 @@ export class TRINNController extends TRINNPeer {
 
   private connectToRemote(sharedId: string) {
     this.setStatus("connecting");
+
     const connection = this.peer.connect(`${sharedId}-remote`);
     this.connections.push(connection);
+
     connection.on("open", () => {
       this.connectionCallback?.();
       this.setStatus("connected");
     });
+
     connection.on("data", (data) => {
       const { type, object } = data as {
         type: string;
@@ -165,6 +166,7 @@ export class TRINNController extends TRINNPeer {
       };
       if (type === "data") this.dataCallback?.(object);
     });
+
     connection.on("close", () => {
       this.connectionCloseCallback?.(connection.peer);
       this.connections = this.connections.filter((conn) => conn !== connection);
@@ -185,11 +187,20 @@ export class TRINNController extends TRINNPeer {
 export class TRINNRemote extends TRINNPeer {
   private pressCallback: ((key: string) => void) | undefined;
   private releaseCallback: ((key: string) => void) | undefined;
+  private maxConnections = -1;
 
   constructor(sharedId: string) {
     super(`${sharedId}-remote`);
 
     this.peer.on("connection", (connection) => {
+      if (
+        this.maxConnections !== -1 &&
+        this.connections.length >= this.maxConnections
+      ) {
+        connection.close();
+        return;
+      }
+
       this.connections.push(connection);
       this.connectionCallback?.();
       connection.on("data", (data) => {
@@ -209,6 +220,10 @@ export class TRINNRemote extends TRINNPeer {
         );
       });
     });
+  }
+
+  setMaxConnections(amount: number) {
+    this.maxConnections = amount;
   }
 
   onPress(onPressCallback: (key: string) => void) {
