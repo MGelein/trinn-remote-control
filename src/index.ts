@@ -140,6 +140,11 @@ export class TRINNController extends TRINNPeer {
       this.onError(({ type }) => {
         if (type === "peer-unavailable") {
           this.unavailableCallback?.();
+          if (TRINNConfig.debug)
+            console.log(
+              "Calling unavailable callback: ",
+              this.unavailableCallback
+            );
           setTimeout(() => {
             this.connectToRemote(sharedId);
           }, 1000 * TRINNConfig.retryTimeout);
