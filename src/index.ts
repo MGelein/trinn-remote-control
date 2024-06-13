@@ -27,6 +27,21 @@ export const setupTRINN = async () => {
   if (TRINNConfig.debug) console.log({ iceServers: json });
 };
 
+const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW0123456789";
+const LENGTH = 32;
+
+const randomString = () => {
+  const chars = [];
+  for (let i = 0; i < LENGTH; i++) {
+    chars[i] = randomChar();
+  }
+  return chars.join("");
+};
+
+const randomChar = () => {
+  return chars[Math.floor(Math.random() * chars.length)];
+};
+
 class TRINNPeer {
   protected connectionCloseCallback: ((id: string) => void) | undefined;
   protected statusChangeCallback: ((status: TRINNStatus) => void) | undefined;
@@ -132,7 +147,7 @@ class TRINNPeer {
 
 export class TRINNController extends TRINNPeer {
   constructor(sharedId: string, unavaibleHandler?: () => void) {
-    super(`${sharedId}-${crypto.randomUUID()}`);
+    super(`${sharedId}-${randomString()}`);
     this.peer.on("open", (id) => {
       this.id = id;
       this.onError(({ type }) => {
