@@ -110,6 +110,7 @@ class TRINNPeer {
   }
 
   onCreate(onCreateCallback: (id: string) => void) {
+    if (this.id) onCreateCallback(this.id);
     this.createCallback = onCreateCallback;
   }
 
@@ -118,6 +119,7 @@ class TRINNPeer {
   }
 
   onConnection(onConnectionCallback: () => void) {
+    if (this.status === "connected") onConnectionCallback();
     this.connectionCallback = onConnectionCallback;
   }
 
