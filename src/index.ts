@@ -18,9 +18,9 @@ export const TRINNConfig = {
   iceServers: [],
 };
 
-export const setupTRINN = async () => {
+export const setupTRINN = async (openRelayAPIKey: string) => {
   const response = await fetch(
-    "https://trinn.metered.live/api/v1/turn/credentials?apiKey=f18b20324bf3ecce8c47091e971fc7c1b134"
+    `https://trinn.metered.live/api/v1/turn/credentials?apiKey=${openRelayAPIKey}`
   );
   const json = await response.json();
   TRINNConfig.iceServers = json;
