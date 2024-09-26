@@ -173,7 +173,7 @@ export class TRINNController extends TRINNPeer {
     this.connections.push(connection);
 
     connection.on("open", () => {
-      this.connectionCallback?.(connection.peer);
+      this.connectionCallback?.(connection.connectionId);
       this.setStatus("connected");
     });
 
@@ -186,7 +186,7 @@ export class TRINNController extends TRINNPeer {
     });
 
     connection.on("close", () => {
-      this.connectionCloseCallback?.(connection.peer);
+      this.connectionCloseCallback?.(connection.connectionId);
       this.connections = this.connections.filter((conn) => conn !== connection);
     });
   }
