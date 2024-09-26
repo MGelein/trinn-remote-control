@@ -49,7 +49,7 @@ class TRINNPeer {
   protected errorCallback: ((error: { type: string }) => void) | undefined;
   protected createCallback: ((id: string) => void) | undefined;
   protected dataCallback: ((object: Object) => void) | undefined;
-  protected connectionCallback: (() => void) | undefined;
+  protected connectionCallback: ((id: string) => void) | undefined;
   protected connections: DataConnection[] = [];
 
   private status: TRINNStatus = "waiting";
@@ -118,8 +118,9 @@ class TRINNPeer {
     this.dataCallback = onDataCallback;
   }
 
-  onConnection(onConnectionCallback: () => void) {
-    if (this.status === "connected") onConnectionCallback();
+  onConnection(onConnectionCallback: (id: string) => void) {
+    if (this.status === "connected")
+      onConnectionCallback("i don't know man your guess is as good as mine");
     this.connectionCallback = onConnectionCallback;
   }
 
@@ -172,7 +173,7 @@ export class TRINNController extends TRINNPeer {
     this.connections.push(connection);
 
     connection.on("open", () => {
-      this.connectionCallback?.();
+      this.connectionCallback?.(connection.peer);
       this.setStatus("connected");
     });
 
@@ -219,7 +220,7 @@ export class TRINNRemote extends TRINNPeer {
       }
 
       this.connections.push(connection);
-      this.connectionCallback?.();
+      this.connectionCallback?.(connection.peer);
       connection.on("data", (data) => {
         const { key, type, object } = data as {
           key: string;
