@@ -52,7 +52,7 @@ class TRINNPeer {
   protected connectionCallback: ((id: string) => void) | undefined;
   protected connections: DataConnection[] = [];
 
-  private status: TRINNStatus = "waiting";
+  protected status: TRINNStatus = "waiting";
   peer: Peer;
   id: string | undefined;
   error: TRINNError | undefined;
@@ -119,7 +119,6 @@ class TRINNPeer {
   }
 
   onConnection(onConnectionCallback: (id: string) => void) {
-    if (this.status === "connected") onConnectionCallback(this.id ?? "unknown");
     this.connectionCallback = onConnectionCallback;
   }
 
@@ -190,6 +189,11 @@ export class TRINNController extends TRINNPeer {
     });
   }
 
+  override onConnection(onConnectionCallback: (id: string) => void): void {
+    super.onConnection(onConnectionCallback);
+    if (this.status === "connected") onConnectionCallback(this.id ?? "unknown");
+  }
+
   sendPress(keyName: string) {
     this.connections.map((conn) => conn.send({ key: keyName, type: "press" }));
   }
@@ -237,6 +241,12 @@ export class TRINNRemote extends TRINNPeer {
         );
       });
     });
+  }
+
+  override onConnection(onConnectionCallback: (id: string) => void): void {
+    super.onConnection(onConnectionCallback);
+    if (this.status === "connected")
+      this.connections.forEach((conn) => onConnectionCallback(conn.peer));
   }
 
   setMaxConnections(amount: number) {
