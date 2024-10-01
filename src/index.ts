@@ -119,8 +119,7 @@ class TRINNPeer {
   }
 
   onConnection(onConnectionCallback: (id: string) => void) {
-    if (this.status === "connected")
-      onConnectionCallback("i don't know man your guess is as good as mine");
+    if (this.status === "connected") onConnectionCallback(this.id ?? "unknown");
     this.connectionCallback = onConnectionCallback;
   }
 
@@ -173,7 +172,7 @@ export class TRINNController extends TRINNPeer {
     this.connections.push(connection);
 
     connection.on("open", () => {
-      this.connectionCallback?.(connection.connectionId);
+      this.connectionCallback?.(this.id ?? "unknown");
       this.setStatus("connected");
     });
 
